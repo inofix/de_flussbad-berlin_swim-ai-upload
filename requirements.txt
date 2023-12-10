@@ -1,1 +1,3 @@
 requests
+gpsd-py3
+pymodbus
