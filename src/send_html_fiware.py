@@ -1,4 +1,3 @@
-import sys
 import requests
 import json
 import datetime
@@ -21,10 +20,10 @@ def send_data(configfilename):
             c = c['send']
     except FileNotFoundError:
         print("The config file was not found at: ", configfilename)
-        sys.exit(1)
+        raise SystemExit
     except AttributeError as e:
         print("The config file ('", configfilename, "') was not as expected: ", e)
-        sys.exit(1)
+        raise SystemExit
 
     authaddress = c['authaddress']
     brokeraddress = c['brokeraddress']
@@ -38,10 +37,10 @@ def send_data(configfilename):
         }
     except json.decoder.JSONDecodeError as e:
         print("The config file ('", configfilename, "') did not contain valid json: ", e)
-        sys.exit(1)
+        raise SystemExit
     except AttributeError as e:
         print("The config file ('", configfilename, "') was not as expected: ", e)
-        sys.exit(1)
+        raise SystemExit
 
     headers = requests.structures.CaseInsensitiveDict()
     headers["Accept"] = "application/json"
@@ -52,7 +51,7 @@ def send_data(configfilename):
         authresponse = requests.post(authaddress, headers=headers, data=data)
     except Exception as e:
         print("Failed to connect to the auth service: ", e)
-        sys.exit(1)
+        raise SystemExit
 
     body = read_data()
 
@@ -63,12 +62,5 @@ def send_data(configfilename):
         print("Failed to connect to the FIWARE service: ", e)
 
 if __name__ == '__main__':
-    try:
-        if len(sys.argv) == 2:
-            send_data(sys.argv[1])
-        else:
-            print("Please provide the name of the config json file")
-    except Exception as e:
-        print("This error was not catched before (what a shame for that programmer): ", e)
-
+    print("These lines of code are thought to be used as a library..")
 
