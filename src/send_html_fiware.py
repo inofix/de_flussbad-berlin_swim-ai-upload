@@ -1,10 +1,10 @@
 import requests
 import json
-import datetime
+from datetime import datetime
 from base64 import b64encode
 
 def read_data():
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     temp = 24
 
     return {
