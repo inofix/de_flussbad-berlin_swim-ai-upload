@@ -1,0 +1,48 @@
+
+{
+    "collect":{
+        "use_gps": "true",
+        "sensor_hub_address": "modbus.example.org",
+        "sensor_hub_port": "TODO",
+        "modbus_input_register_address": "128",
+        "modbus_input_register_count": "16"
+    },
+    "data":{
+        "storage_directory_new": "/<path_to_data_dir>/new",
+        "storage_directory_archive": "/<path_to_data_dir>/archive",
+        "timestamp_name": "timestamp",
+        "geohash_name": "geohash",
+        "value_register_map": {
+            "0": {
+                "id": "localname0",
+                "fiware_type": "QualityObserved",
+                "fiware_id": "23",
+                "fiware_name": "DissolvedOxygenExample",
+                "modbus_reg0": "2",
+                "modbus_reg1": "3",
+                "name": "Dissolved Oxygen",
+                "sensor": "foobar",
+                "unit": "%sat"
+            },
+            "1": {
+                "id": "localname1",
+                "fiware_type": "QualityObserved",
+                "fiware_id": "23",
+                "fiware_name": "Temperature",
+                "modbus_reg0": "10",
+                "modbus_reg1": "11",
+                "name": "Temperature",
+                "sensor": "foobar",
+                "unit": "°C"
+            }
+        }
+    },
+    "send": {
+        "authentication_address": "https://k-rock.example.org/token",
+        "broker_address": "https://broker.example.org/v2/entities/",
+        "username" : "me",
+        "password" : "secret",
+        "basic_username" : "me_too",
+        "basic_password" : "wonttell"
+    }
+}
