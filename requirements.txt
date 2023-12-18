@@ -1,3 +1,4 @@
-requests
+geohash2
 gpsd-py3
 pymodbus
+requests
