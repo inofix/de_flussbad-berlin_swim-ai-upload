@@ -84,6 +84,10 @@ def send_data(configfilename):
         'X-Auth-Token': authresponse.json()["access_token"]
     }
 
+    do_verify = True
+    if c['verify_certificate'].lower() in ['false', 'no', 'n', '0']:
+        do_verify = False
+
     for f in glob.glob(storage_dir_new + '/[0-9]*' + storage_file_suffix):
         try:
             with open(f) as t:

@@ -43,6 +43,7 @@
     "send": {
         "authentication_address": "https://k-rock.example.org/token",
         "broker_address": "https://broker.example.org/v2/entities/",
+        "verify_certificate": "False",
         "username" : "me",
         "password" : "secret",
         "basic_username" : "me_too",
