@@ -43,6 +43,8 @@ def collect_data(configfilename):
     epoch = datetime(1970,1,1,tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     nano = int((now - epoch).total_seconds() * 1000000000)
+    storage_dir = d['storage_directory_new']
+    storage_file = storage_dir + "/" + str(nano) + d['storage_file_suffix']
 
     if c['use_gps'] == "true":
         gh = geohash()
@@ -83,11 +85,10 @@ def collect_data(configfilename):
         raise SystemExit
 
     try:
-        os.makedirs(os.path.dirname(d['storage_directory_new']), exist_ok=True)
-        with open(d['storage_directory_new'] + '/' + str(nano), 'a') as f:
+        os.makedirs(os.path.dirname(storage_dir), exist_ok=True)
+        with open(storage_file, 'a') as f:
             json.dump(m, f)
     except Exception as e:
-        print("Unable to create the data file '" +
-                d['storage_directory_new'] + '/' + str(nano) + "!\n", e)
+        print("Unable to create the data file '" + storage_file + "'!\n", e)
         raise SystemExit
 
