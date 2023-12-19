@@ -1,7 +1,10 @@
-import requests
-import json
-from datetime import datetime
 from base64 import b64encode
+from datetime import datetime
+import glob
+import json
+import os
+import requests
+import shutil
 
 def read_data():
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -17,6 +20,7 @@ def send_data(configfilename):
     try:
         with open(configfilename, "r") as f:
             c = json.load(f)
+            d = c['data']
             c = c['send']
     except FileNotFoundError:
         print("The config file was not found at: ", configfilename)
@@ -25,11 +29,33 @@ def send_data(configfilename):
         print("The config file ('", configfilename, "') was not as expected: ", e)
         raise SystemExit
 
-    authaddress = c['authaddress']
-    brokeraddress = c['brokeraddress']
+    storage_dir_new = d['storage_directory_new']
+    storage_dir_old = d['storage_directory_archive']
+    storage_dir_junk = d['storage_directory_junk']
+    storage_file_suffix = d['storage_file_suffix']
+    try:
+        try:
+            os.makedirs(os.path.dirname(storage_dir_new + '/'))
+        except FileExistsError:
+            pass
+        try:
+            os.makedirs(os.path.dirname(storage_dir_old + '/'))
+        except FileExistsError:
+            pass
+        try:
+            os.makedirs(os.path.dirname(storage_dir_junk + '/'))
+        except FileExistsError:
+            pass
+    except PermissionError:
+        print("You do not have the permission to write here.\n",
+                storage_dir_new, storage_dir_old, storage_dir_junk)
+        raise SystemExit
+
+    authaddress = c['authentication_address']
+    brokeraddress = c['broker_address']
 
     try:
-        basicauth = b64encode(bytes(c['basicuser'] + ":" + c['basicpass'], 'utf-8')).decode('ascii')
+        basicauth = b64encode(bytes(c['basic_username'] + ":" + c['basic_password'], 'utf-8')).decode('ascii')
         data = {
             'username': c['username'],
             'password': c['password'],
@@ -53,13 +79,48 @@ def send_data(configfilename):
         print("Failed to connect to the auth service: ", e)
         raise SystemExit
 
-    body = read_data()
+    request_headers = {
+        'Content-Type': 'application/json',
+        'X-Auth-Token': authresponse.json()["access_token"]
+    }
 
-    try:
-        answer = requests.patch(brokeraddress + "urn:ngsi-ld:WaterQualityObserved:22:Scan_Temperature/attrs", verify = False, headers = { 'Content-Type':'application/json', 'X-Auth-Token': authresponse.json()["access_token"], },data = json.dumps(body))
-        print("The connection was established fine:", answer.ok)
-    except Exception as e:
-        print("Failed to connect to the FIWARE service: ", e)
+    for f in glob.glob(storage_dir_new + '/[0-9]*' + storage_file_suffix):
+        try:
+            with open(f) as t:
+                j = json.load(t)
+            try:
+                timestamp = datetime.fromtimestamp(
+                        int(j[d['timestamp_name']]) // 1000000000)
+                dbtime = timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                dbtimeid = d['timestamp_db_name']
+                #TODO geohash ...
+            except KeyError:
+                print("Can not continue, there was no timestamp in the file.")
+                raise SystemExit
+
+            for k, v in d['value_register_map'].items():
+                try:
+                    data = {
+                        v["id"]: {"type":v['type'], "value": j[k]},
+                        dbtimeid: {"type":"string", "value": dbtime}
+                    }
+                except KeyError:
+                    continue
+                jdata = json.dumps(data)
+                url = brokeraddress + "urn:ngsi-ld:" + v["fiware_type"] +\
+                    ":" + v["fiware_id"] + ":" + v["fiware_name"] + "/attrs"
+
+                try:
+                    answer = requests.patch(url, verify = False,
+                        headers = request_headers, data = jdata)
+                    print("The connection was established fine:", answer.ok)
+                    shutil.move(f, storage_dir_old)
+                except Exception as e:
+                    print("Failed to connect to the FIWARE service: ", e)
+
+        except json.decoder.JSONDecodeError:
+            shutil.move(f, storage_dir_junk)
+            continue
 
 if __name__ == '__main__':
     print("These lines of code are thought to be used as a library..")
