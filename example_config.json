@@ -10,11 +10,13 @@
     "data":{
         "storage_directory_new": "/<path_to_data_dir>/new",
         "storage_directory_archive": "/<path_to_data_dir>/archive",
+        "storage_directory_junk": "/<path_to_data_dir>/junk",
         "timestamp_name": "timestamp",
         "geohash_name": "geohash",
         "value_register_map": {
             "0": {
-                "id": "localname0",
+                "id": "dbid0",
+                "type": "Float",
                 "fiware_type": "QualityObserved",
                 "fiware_id": "23",
                 "fiware_name": "DissolvedOxygenExample",
@@ -25,7 +27,8 @@
                 "unit": "%sat"
             },
             "1": {
-                "id": "localname1",
+                "id": "dbid1",
+                "type": "Float",
                 "fiware_type": "QualityObserved",
                 "fiware_id": "23",
                 "fiware_name": "Temperature",
