@@ -20,8 +20,8 @@
                 "fiware_type": "QualityObserved",
                 "fiware_id": "23",
                 "fiware_name": "DissolvedOxygenExample",
-                "modbus_reg0": "2",
-                "modbus_reg1": "3",
+                "modbus_address": "2",
+                "modbus_count": "2",
                 "name": "Dissolved Oxygen",
                 "sensor": "foobar",
                 "unit": "%sat"
@@ -32,8 +32,8 @@
                 "fiware_type": "QualityObserved",
                 "fiware_id": "23",
                 "fiware_name": "Temperature",
-                "modbus_reg0": "10",
-                "modbus_reg1": "11",
+                "modbus_address": "10",
+                "modbus_count": "2",
                 "name": "Temperature",
                 "sensor": "foobar",
                 "unit": "°C"

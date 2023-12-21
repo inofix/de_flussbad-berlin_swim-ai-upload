@@ -9,9 +9,9 @@ from pymodbus import ModbusException
 from struct import *
 import time
 
-def convert_bytes_to_float(int1, int2):
-    hex1 = (int1).to_bytes(2,byteorder='little')
-    hex2 = (int2).to_bytes(2,byteorder='little')
+def convert_byte_registers_to_float(register_array):
+    hex1 = (int(register_array[0])).to_bytes(2,byteorder='little')
+    hex2 = (int(register_array[1])).to_bytes(2,byteorder='little')
     return 0 if math.isnan(float(unpack("<f",hex2 + hex1)[0])) else unpack("<f",hex2 + hex1)[0]
 
 def geohash():
@@ -51,30 +51,30 @@ def collect_data(configfilename):
     else:
         gh = 'u'
 
-    client = ModbusTcpClient(sensor_hub_address)
-    # just try a couple of times if necessary...
-    for i in range(0, 15):
-        try:
-            r = client.read_input_registers(
-                    int(c['modbus_input_register_address']),
-                    int(c['modbus_input_register_count'])
-                )
-            break
-        except ModbusException:
-            time.sleep(2)
-            continue
-
     try:
         m = {
                 d['timestamp_name']: str(nano),
                 d['geohash_name']: gh
             }
+        client = ModbusTcpClient(sensor_hub_address)
         for k, v in d['value_register_map'].items():
+            # just try a couple of times if necessary...
+            r = None
+            for i in range(0, 8):
+                try:
+                    r = client.read_input_registers(
+                            int(v['modbus_address']),
+                            int(v['modbus_count'])
+                        )
+                    break
+                except ValueError:
+                    print("Your config file has unvalid values for modbus at entry:", k)
+                    raise SystemExit
+                except ModbusException:
+                    time.sleep(2)
+                    continue
             try:
-                m[k] = str(convert_bytes_to_float(
-                            r.registers[int(v['modbus_reg0'])],
-                            r.registers[int(v['modbus_reg1'])]
-                        ))
+                m[k] = str(convert_byte_registers_to_float(r.registers))
             except (KeyError, ValueError):
                 continue
     except UnboundLocalError:
