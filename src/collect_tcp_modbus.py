@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import gpsd
 import geohash2
 import json
+import logging
 import math
 import os
 from pymodbus.client import ModbusTcpClient
@@ -20,10 +21,10 @@ def geohash():
         packet = gpsd.get_current()
         return geohash2.encode(packet.position()[0],packet.position()[1])
     except ConnectionRefusedError:
-        print("Could not connect to the GPS device.")
+        logging.error("Could not connect to the GPS device.")
         raise SystemExit
     except Exception as e:
-        print("Could not get GPS info: ", e)
+        logging.error("Could not get GPS info: ", e)
         raise SystemExit
 
 def collect_data(configfilename):
@@ -32,15 +33,17 @@ def collect_data(configfilename):
             c = json.load(f)
             d = c['data']
             c = c['collect']
+        logging.basicConfig(filename=c["log_filename"], encoding=c["log_encoding"], level=c["log_level"])
     except FileNotFoundError:
-        print("The config file was not found at: ", configfilename)
+        logging.critical("The config file was not found at: ", configfilename)
         raise SystemExit
     except AttributeError as e:
-        print("The config file ('", configfilename, "') was not as expected: ", e)
+        logging.critical("The config file ('", configfilename, "') was not as expected: ", e)
         raise SystemExit
 
     sensor_hub_address = c['sensor_hub_address']
     epoch = datetime(1970,1,1,tzinfo=timezone.utc)
+    # only calculate now once in order to keep the measurments related (e.g. temp+condu)
     now = datetime.now(timezone.utc)
     nano = int((now - epoch).total_seconds() * 1000000000)
     storage_dir = d['storage_directory_new']
@@ -68,7 +71,7 @@ def collect_data(configfilename):
                         )
                     break
                 except ValueError:
-                    print("Your config file has unvalid values for modbus at entry:", k)
+                    logging.error("Your config file might have unvalid values for modbus at entry:", k)
                     raise SystemExit
                 except ModbusException:
                     time.sleep(2)
@@ -78,10 +81,9 @@ def collect_data(configfilename):
             except (KeyError, ValueError):
                 continue
     except UnboundLocalError:
-        print("Could not connect to Modbus-TCP...")
-        raise SystemExit
+        logging.error("Could not connect to Modbus-TCP...")
     except IndexError as e:
-        print("Have you used in the wrong register count in the config?", e)
+        logging.critical("Have you used in the wrong register count in the config?", e)
         raise SystemExit
 
     try:
@@ -89,6 +91,6 @@ def collect_data(configfilename):
         with open(storage_file, 'a') as f:
             json.dump(m, f)
     except Exception as e:
-        print("Unable to create the data file '" + storage_file + "'!\n", e)
+        logging.critical("Unable to create the data file '" + storage_file + "'!\n", e)
         raise SystemExit
 
