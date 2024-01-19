@@ -47,7 +47,6 @@ def collect_data(configfilename):
     now = datetime.now(timezone.utc)
     nano = int((now - epoch).total_seconds() * 1000000000)
     storage_dir = d['storage_directory_new']
-    storage_file = storage_dir + "/" + str(nano) + d['storage_file_suffix']
 
     if c['use_gps'] == "true":
         gh = geohash()
@@ -55,12 +54,12 @@ def collect_data(configfilename):
         gh = 'u'
 
     try:
-        m = {
-                d['timestamp_name']: str(nano),
-                d['geohash_name']: gh
-            }
         client = ModbusTcpClient(sensor_hub_address)
         for k, v in d['value_register_map'].items():
+            m = {
+                    d['timestamp_name']: str(nano),
+                    d['geohash_name']: gh
+                }
             # just try a couple of times if necessary...
             r = None
             for i in range(0, 8):
@@ -80,17 +79,18 @@ def collect_data(configfilename):
                 m[k] = str(convert_byte_registers_to_float(r.registers))
             except (KeyError, ValueError):
                 continue
+            try:
+                storage_file = storage_dir + "/" + str(nano) + "_" + k + d['storage_file_suffix']
+                os.makedirs(os.path.dirname(storage_dir), exist_ok=True)
+                with open(storage_file, 'a') as f:
+                    json.dump(m, f)
+            except Exception as e:
+                logging.critical("Unable to create the data file '" + storage_file + "'!\n", e)
+                raise SystemExit
+
     except UnboundLocalError:
         logging.error("Could not connect to Modbus-TCP...")
     except IndexError as e:
         logging.critical("Have you used in the wrong register count in the config?", e)
-        raise SystemExit
-
-    try:
-        os.makedirs(os.path.dirname(storage_dir), exist_ok=True)
-        with open(storage_file, 'a') as f:
-            json.dump(m, f)
-    except Exception as e:
-        logging.critical("Unable to create the data file '" + storage_file + "'!\n", e)
         raise SystemExit
 
