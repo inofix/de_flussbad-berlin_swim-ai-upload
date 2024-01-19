@@ -7,14 +7,6 @@ import os
 import requests
 import shutil
 
-def read_data():
-    temp = 24
-
-    return {
-        'temperature': {"type":"Float", "value": temp},
-        'dateObserved': {"type":"string", "value": now}
-    }
-
 def send_data(configfilename):
 
     try:
