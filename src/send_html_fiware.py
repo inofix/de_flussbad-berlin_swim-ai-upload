@@ -14,6 +14,7 @@ def send_data(configfilename):
             c = json.load(f)
             d = c['data']
             c = c['send']
+            logging.basicConfig(filename=c["log_filename"], encoding=c["log_encoding"], level=c["log_level"])
     except FileNotFoundError:
         logging.critical("The config file was not found at: ", configfilename)
         raise SystemExit
