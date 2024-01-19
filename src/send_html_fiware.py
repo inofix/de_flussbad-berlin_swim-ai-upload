@@ -113,7 +113,7 @@ def send_data(configfilename):
             for k, v in d['value_register_map'].items():
                 try:
                     data = {
-                        v["id"]: {"type":v['type'], "value": j[k]},
+                        v["swim_id"]: {"type":v['type'], "value": j[k]},
                         dbtimeid: {"type":"string", "value": dbtime}
                     }
                     logging.debug(data)
