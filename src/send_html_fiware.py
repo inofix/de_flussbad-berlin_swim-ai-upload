@@ -1,5 +1,5 @@
 from base64 import b64encode
-from datetime import datetime
+from datetime import datetime, timezone
 import glob
 import json
 import logging
@@ -8,7 +8,6 @@ import requests
 import shutil
 
 def read_data():
-    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     temp = 24
 
     return {
@@ -33,8 +32,9 @@ def send_data(configfilename):
         logging.critical("The config file ('", configfilename, "') was not as expected: ", e)
         raise SystemExit
 
+    now_dirs = datetime.now(timezone.utc).strftime('/%Y/%m/%d')
     storage_dir_new = d['storage_directory_new']
-    storage_dir_old = d['storage_directory_archive']
+    storage_dir_old = d['storage_directory_archive'] + now_dirs
     storage_dir_junk = d['storage_directory_junk']
     storage_file_suffix = d['storage_file_suffix']
     try:
