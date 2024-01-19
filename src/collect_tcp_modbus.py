@@ -77,7 +77,7 @@ def collect_data(configfilename):
                     continue
             try:
                 m[k] = str(convert_byte_registers_to_float(r.registers))
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, AttributeError):
                 continue
             try:
                 storage_file = storage_dir + "/" + str(nano) + "_" + k + d['storage_file_suffix']
