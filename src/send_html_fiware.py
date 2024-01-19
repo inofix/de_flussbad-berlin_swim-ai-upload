@@ -2,6 +2,7 @@ from base64 import b64encode
 from datetime import datetime
 import glob
 import json
+import logging
 import os
 import requests
 import shutil
@@ -23,10 +24,13 @@ def send_data(configfilename):
             d = c['data']
             c = c['send']
     except FileNotFoundError:
-        print("The config file was not found at: ", configfilename)
+        logging.critical("The config file was not found at: ", configfilename)
+        raise SystemExit
+    except json.decoder.JSONDecodeError as e:
+        logging.critical("The config file ('", configfilename, "') did not contain valid json: ", e)
         raise SystemExit
     except AttributeError as e:
-        print("The config file ('", configfilename, "') was not as expected: ", e)
+        logging.critical("The config file ('", configfilename, "') was not as expected: ", e)
         raise SystemExit
 
     storage_dir_new = d['storage_directory_new']
@@ -47,7 +51,7 @@ def send_data(configfilename):
         except FileExistsError:
             pass
     except PermissionError:
-        print("You do not have the permission to write here.\n",
+        logging.critical("You do not have the permission to write here.\n",
                 storage_dir_new, storage_dir_old, storage_dir_junk)
         raise SystemExit
 
@@ -62,10 +66,10 @@ def send_data(configfilename):
             'grant_type': 'password'
         }
     except json.decoder.JSONDecodeError as e:
-        print("The config file ('", configfilename, "') did not contain valid json: ", e)
+        logging.error("The auth data did not contain valid json: ", e)
         raise SystemExit
     except AttributeError as e:
-        print("The config file ('", configfilename, "') was not as expected: ", e)
+        logging.error("The auth request could not be encoded and generated: ", e)
         raise SystemExit
 
     headers = requests.structures.CaseInsensitiveDict()
@@ -76,13 +80,17 @@ def send_data(configfilename):
     try:
         authresponse = requests.post(authaddress, headers=headers, data=data)
     except Exception as e:
-        print("Failed to connect to the auth service: ", e)
+        logging.error("Failed to connect to the auth service: ", e)
         raise SystemExit
 
-    request_headers = {
-        'Content-Type': 'application/json',
-        'X-Auth-Token': authresponse.json()["access_token"]
-    }
+    try:
+        request_headers = {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': authresponse.json()["access_token"]
+        }
+    except json.decoder.JSONDecodeError as e:
+        logging.error("The request headers could not be formed: ", e)
+        raise SystemExit
 
     do_verify = True
     if c['verify_certificate'].lower() in ['false', 'no', 'n', '0']:
@@ -99,7 +107,7 @@ def send_data(configfilename):
                 dbtimeid = d['timestamp_db_name']
                 #TODO geohash ...
             except KeyError:
-                print("Can not continue, there was no timestamp in the file.")
+                logging.error("Can not continue, there was no timestamp in the file.")
                 raise SystemExit
 
             for k, v in d['value_register_map'].items():
@@ -108,19 +116,21 @@ def send_data(configfilename):
                         v["id"]: {"type":v['type'], "value": j[k]},
                         dbtimeid: {"type":"string", "value": dbtime}
                     }
+                    logging.debug(data)
                 except KeyError:
                     continue
                 jdata = json.dumps(data)
                 url = brokeraddress + "urn:ngsi-ld:" + v["fiware_type"] +\
                     ":" + v["fiware_id"] + ":" + v["fiware_name"] + "/attrs"
-
+                logging.debug(url)
                 try:
                     answer = requests.patch(url, verify = False,
                         headers = request_headers, data = jdata)
-                    print("The connection was established fine:", answer.ok)
-                    shutil.move(f, storage_dir_old)
+                    logging.info("The connection was established fine:", answer.ok, "(" + answer.status_code + ")")
                 except Exception as e:
-                    print("Failed to connect to the FIWARE service: ", e)
+                    logging.warning("Failed to connect to the FIWARE service: ", e)
+
+            shutil.move(f, storage_dir_old)
 
         except json.decoder.JSONDecodeError:
             shutil.move(f, storage_dir_junk)
