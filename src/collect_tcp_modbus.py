@@ -94,3 +94,6 @@ def collect_data(configfilename):
         logging.critical("Have you used in the wrong register count in the config?", e)
         raise SystemExit
 
+if __name__ == '__main__':
+        print("These lines of code are thought to be used as a library..")
+
