@@ -119,7 +119,8 @@ def send_data(configfilename):
                 try:
                     answer = requests.patch(url, verify = False,
                         headers = request_headers, data = jdata)
-                    logging.info("The connection was established fine:", answer.ok, "(" + answer.status_code + ")")
+                    logging.info("The connection was established fine:",
+                            answer.ok, "(" + str(answer.status_code) + ")")
                 except Exception as e:
                     logging.warning("Failed to connect to the FIWARE service: ", e)
 
